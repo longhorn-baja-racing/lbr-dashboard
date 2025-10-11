@@ -1,5 +1,5 @@
-import sys
 import signal
+import sys
 
 from PyQt6.QtWidgets import QApplication, QWidget
 
