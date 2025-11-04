@@ -1,17 +1,16 @@
 import signal
 import sys
 
-from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QApplication
+
+from ui import MainWindow
 
 
-def main():
+def main() -> None:
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = QApplication(sys.argv)
 
-    window = QWidget()
-    window.setWindowTitle("LHB Dashboard")
-    window.resize(800, 600)
-
+    window = MainWindow()
     window.show()
 
     sys.exit(app.exec())
