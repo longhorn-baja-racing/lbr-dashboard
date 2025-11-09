@@ -10,12 +10,11 @@ from PyQt6.QtWidgets import (
 
 class BottomPanel(QFrame):
     def __init__(self) -> None:
-        # --- Bottom: Control Pane (3 columns) ---
         super().__init__()
         self.setObjectName("control_frame")
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        self.setMinimumHeight(120)  # Minimum height instead of fixed
+        self.setMinimumHeight(120)
         control_layout = QHBoxLayout()
         control_layout.setContentsMargins(6, 6, 6, 6)
         control_layout.setSpacing(8)

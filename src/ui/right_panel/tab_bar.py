@@ -1,6 +1,5 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QLabel,
     QTabWidget,
     QWidget,
     QSizePolicy
@@ -8,7 +7,6 @@ from PyQt6.QtWidgets import (
 
 class TabBar(QTabWidget):
     def __init__(self) -> None:
-        # --- Top: Tab bar ---
         super().__init__()
         self.setObjectName("right_top_tabs")
         self.setFixedHeight(40)
@@ -36,10 +34,8 @@ class TabBar(QTabWidget):
         """)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        # Add tab buttons without content pages
         for name in ("Line Graph", "Odometry", "3D Field"):
             self.addTab(QWidget(), name)
             
-        # Remove the empty content area under the tabs
         self.setDocumentMode(True)
         

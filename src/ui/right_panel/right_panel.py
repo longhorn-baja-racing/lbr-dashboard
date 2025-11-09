@@ -1,13 +1,8 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QLabel,
-    QTabWidget,
     QVBoxLayout,
-    QHBoxLayout,
     QWidget,
-    QFrame,
-    QSizePolicy,
-    QGroupBox,
     QSplitter,
 )
 
@@ -63,9 +58,28 @@ class RightPanel(QWidget):
         # Add widgets to root layout: top (tabs) and splitter (viewer + controls)
         root.addWidget(tabs)
         root.addWidget(splitter)
-
         self.setLayout(root)
 
         # Additional styling for frames and controls
-        with open("src/ui/right_panel/right_panel_styles.css", "r") as f:
-            self.setStyleSheet(f.read())
+        self.setStyleSheet("""
+            #viewer_frame {
+                background: #f8fbff;
+                border: 2px solid #1a73e8;
+                border-radius: 4px;
+            }
+            #control_frame {
+                background: #f7fff7;
+                border: 1px solid #c0c0c0;
+                border-radius: 4px;
+            }
+            QGroupBox {
+                border: 1px solid #c0c0c0;
+                border-radius: 4px;
+                margin-top: 0.5em;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 3px;
+            }
+        """)
