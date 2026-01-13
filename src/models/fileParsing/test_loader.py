@@ -1,9 +1,12 @@
 # test_loader.py
+import os
 from data_loader import DataLoader
 
 # Create and use a DataLoader instance
 loader = DataLoader()
-loader.load_file("sample_baja_log.csv")
+# Get the directory of this script and load the CSV file relative to it
+script_dir = os.path.dirname(os.path.abspath(__file__))
+loader.load_file(os.path.join(script_dir, "sample_baja_log.csv"))
 
 print("File loaded successfully!")
 
