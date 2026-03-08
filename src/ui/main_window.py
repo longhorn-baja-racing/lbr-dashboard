@@ -1,11 +1,12 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMainWindow, QSplitter
+from PyQt6.QtWidgets import QMainWindow, QSplitter, QFileDialog
 
 from models.constants import window_constants
 
 from .left_panel import LeftPanel
 from .right_panel import RightPanel
 from .top_menu_bar import TopMenuBar
+import csv
 
 
 class MainWindow(QMainWindow):
@@ -18,7 +19,7 @@ class MainWindow(QMainWindow):
         self.resize(1200, 700)
 
         # Top menu bar
-        top_menu_bar = TopMenuBar()
+        top_menu_bar = TopMenuBar(self)
         self.setMenuBar(top_menu_bar)
 
         # Left and Right Panels
@@ -52,3 +53,31 @@ class MainWindow(QMainWindow):
         """)
 
         self.setCentralWidget(splitter)
+
+    def open_csv(self):
+        """Open a CSV file and send data to panels."""
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open CSV File",
+            "",
+            "CSV Files (*.csv)"
+        )
+
+        if not file_path:
+            return
+
+        # Read CSV
+        with open(file_path, newline="") as f:
+            reader = csv.reader(f)
+            data = list(reader)
+
+        if not data:
+            return
+
+        headers = data[0]
+        rows = data[1:]
+
+        # Send to panels
+        self.left_panel.set_columns(headers)
+        self.right_panel.set_data(headers, rows)
