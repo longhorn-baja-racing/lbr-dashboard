@@ -1,7 +1,7 @@
 from typing import Optional
 
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMenu, QMenuBar
+from PyQt6.QtWidgets import QMenu, QMenuBar, QApplication
 
 
 class TopMenuBar(QMenuBar):
@@ -22,6 +22,8 @@ class TopMenuBar(QMenuBar):
         open_action: QAction = QAction("&Open", self)
         save_action: QAction = QAction("&Save", self)
         exit_action: QAction = QAction("E&xit", self)
+
+        exit_action.triggered.connect(QApplication.quit)
 
         if file_menu is not None:
             file_menu.addAction(new_action)
