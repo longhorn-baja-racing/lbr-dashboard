@@ -53,6 +53,9 @@ class MainWindow(QMainWindow):
         """)
 
         self.setCentralWidget(splitter)
+        self.left_panel.list_widget.currentRowChanged.connect(
+            self.right_panel.highlight_column
+        )
 
     def open_csv(self):
         """Open a CSV file and send data to panels."""

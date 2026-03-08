@@ -18,6 +18,7 @@ class RightPanel(QWidget):
         layout.addWidget(self.table)
         self.setLayout(layout)
 
+
         # Background style
         self.setStyleSheet("background-color: #3a3a3a; color: #ffffff;")
 
@@ -31,3 +32,12 @@ class RightPanel(QWidget):
         for r, row in enumerate(rows):
             for c, value in enumerate(row):
                 self.table.setItem(r, c, QTableWidgetItem(value))
+    
+    def highlight_column(self, column_index):
+
+        if column_index < 0:
+            return
+
+        self.table.clearSelection()
+        self.table.selectColumn(column_index)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectColumns)
