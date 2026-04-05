@@ -54,6 +54,9 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(splitter)
 
+        # Connect column selection to graph
+        self.left_panel.column_selected.connect(self.right_panel.plot_column)
+
     def open_csv(self):
         """Open a CSV file and send data to panels."""
 
