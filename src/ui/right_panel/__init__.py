@@ -1,3 +1,1 @@
-from .right_panel import RightPanel as RightPanel
-
-__all__ = ["RightPanel"]
+from .right_panel import RightPanel
