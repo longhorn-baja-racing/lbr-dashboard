@@ -1,19 +1,4 @@
 format:
-	uv run ruff format .
-
-lint:
-	uv run ruff check .
-
-typecheck:
-	uv run pyright
-
-test:
-	uv run pytest
-
-quality: format-check lint typecheck test
-
-format-check:
-	uv run ruff format --check .
-
-run:
-	uv run lbr-dashboard
+	autoflake --recursive . -i --remove-all-unused-imports --ignore-init-module-imports
+	isort -w 120 .
+	yapf -i -r -p --style="{based_on_style: yapf, indent_width: 4, column_limit: 120}" --no-local-style ./src/
