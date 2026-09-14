@@ -1,0 +1,58 @@
+{
+  "schema_version": "1",
+  "profile": "2026-bno055-and-future-signals",
+  "metadata": {
+    "description": "Mixed-rate example with current and future signal families"
+  },
+  "signals": [
+    {
+      "id": "imu.acceleration.x",
+      "display_name": "Acceleration X",
+      "path": ["vehicle", "imu", "acceleration"],
+      "type": "numeric",
+      "shape": [],
+      "canonical_unit": "m/s^2",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 100,
+      "description": "BNO055 linear acceleration on the vehicle X axis",
+      "calibration": {"scale": 1.0, "offset": 0.0},
+      "display": {"decimals": 2}
+    },
+    {
+      "id": "imu.orientation.quaternion",
+      "display_name": "Orientation Quaternion",
+      "path": ["vehicle", "imu", "orientation"],
+      "type": "vector",
+      "shape": [4],
+      "canonical_unit": "quaternion",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 50,
+      "future_calibration_model": "bno055-v2"
+    },
+    {
+      "id": "power.battery.low",
+      "display_name": "Battery Low",
+      "path": ["vehicle", "power", "battery"],
+      "type": "boolean",
+      "shape": [],
+      "source_id": "pico-telemetry",
+      "device_id": "power-board-01",
+      "nominal_rate_hz": 10,
+      "availability": {"available": true, "reason": null}
+    },
+    {
+      "id": "suspension.travel.front_left",
+      "display_name": "Front Left Suspension Travel",
+      "path": ["vehicle", "suspension", "travel"],
+      "type": "numeric",
+      "shape": [],
+      "canonical_unit": "mm",
+      "source_id": "future-can",
+      "device_id": "suspension-node-01",
+      "nominal_rate_hz": 200,
+      "description": "Future subsystem descriptor accepted without code changes"
+    }
+  ]
+}

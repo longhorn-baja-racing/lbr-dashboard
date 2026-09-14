@@ -16,6 +16,16 @@ from .lifecycle import (
 )
 from .registries import RegistryBundle
 from .registry import FactoryError, Registry, RegistryError
+from .signals import (
+    KNOWN_SIGNAL_TYPES,
+    SignalAvailability,
+    SignalDescriptor,
+    SignalRegistry,
+    SignalSample,
+    SignalSchema,
+    SignalSchemaError,
+    SignalSeries,
+)
 
 __all__ = [
     "AnalysisProvider",
@@ -27,6 +37,14 @@ __all__ = [
     "Registry",
     "RegistryBundle",
     "RegistryError",
+    "KNOWN_SIGNAL_TYPES",
+    "SignalAvailability",
+    "SignalDescriptor",
+    "SignalRegistry",
+    "SignalSample",
+    "SignalSchema",
+    "SignalSchemaError",
+    "SignalSeries",
     "ServiceEvent",
     "ServiceFailure",
     "TelemetrySource",
