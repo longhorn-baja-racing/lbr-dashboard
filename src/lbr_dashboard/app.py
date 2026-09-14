@@ -8,6 +8,7 @@ from collections.abc import Sequence
 
 from PySide6.QtWidgets import QApplication
 
+from .core.registries import RegistryBundle
 from .ui.main_window import MainWindow
 
 
@@ -20,10 +21,10 @@ def create_application(argv: Sequence[str] | None = None) -> QApplication:
     return QApplication(list(sys.argv if argv is None else argv))
 
 
-def create_main_window() -> MainWindow:
+def create_main_window(registries: RegistryBundle | None = None) -> MainWindow:
     """Create the application shell without showing it."""
 
-    return MainWindow()
+    return MainWindow(registries=registries)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

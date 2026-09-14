@@ -8,6 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QSplitter
 
+from ..core.registries import RegistryBundle
 from .constants import MIN_PANEL_WIDTH
 from .left_panel import LeftPanel
 from .right_panel import RightPanel
@@ -21,8 +22,9 @@ class MainWindow(QMainWindow):
     It will move behind importer/source interfaces in P0 issues #17 and #20.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, registries: RegistryBundle | None = None) -> None:
         super().__init__()
+        self.registries = registries or RegistryBundle()
         self.setWindowTitle("LBR Dashboard")
         self.resize(1200, 700)
 

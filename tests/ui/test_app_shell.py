@@ -6,6 +6,7 @@ from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from lbr_dashboard.app import create_application, create_main_window
+from lbr_dashboard.core import RegistryBundle
 from lbr_dashboard.version import __version__
 
 
@@ -20,6 +21,16 @@ def test_application_shell_can_launch_and_close() -> None:
 
 def test_version_is_available() -> None:
     assert __version__
+
+
+def test_shell_uses_the_application_owned_registry_bundle() -> None:
+    application = create_application([])
+    registries = RegistryBundle()
+    window = create_main_window(registries)
+
+    assert window.registries is registries
+    window.close()
+    application.processEvents()
 
 
 def test_sample_csv_can_be_loaded() -> None:
