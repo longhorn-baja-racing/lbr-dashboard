@@ -11,6 +11,7 @@ from lbr_dashboard.core import (
     FrameKind,
     FrameStreamDecoder,
     IntegrityError,
+    ProtocolError,
     ProtocolFrame,
     TruncatedFrameError,
     UnsupportedProtocolVersion,
@@ -21,6 +22,7 @@ from lbr_dashboard.core import (
 )
 
 GOLDEN_FIXTURE = Path(__file__).parents[1] / "fixtures" / "protocol_golden.json"
+GOLDEN_VECTORS = json.loads(GOLDEN_FIXTURE.read_text(encoding="utf-8"))["vectors"]
 
 
 def frame(**overrides: object) -> ProtocolFrame:
@@ -33,7 +35,7 @@ def frame(**overrides: object) -> ProtocolFrame:
         "payload": {
             "signal_id": "imu.acceleration.x",
             "value": 1.25,
-            "unit": "m/s2",
+            "unit": "m/s^2",
         },
     }
     values.update(overrides)
@@ -97,8 +99,13 @@ def test_bad_checksum_and_unsupported_version_are_actionable() -> None:
     with pytest.raises(IntegrityError, match="checksum"):
         decode_frame(bytes(encoded))
 
+    corrupt_version = bytearray(encode_frame(frame()))
+    corrupt_version[4] = GOLDEN_VECTORS["version_skew"]["version"]
+    with pytest.raises(IntegrityError, match="checksum"):
+        decode_frame(bytes(corrupt_version))
+
     unsupported = bytearray(encode_frame(frame()))
-    unsupported[4] = CURRENT_PROTOCOL_VERSION + 1
+    unsupported[4] = GOLDEN_VECTORS["version_skew"]["version"]
     # Recalculate the checksum so the version error is not hidden by integrity.
     payload_length = struct.unpack_from("<I", unsupported, 20)[0]
     checksum_offset = 24 + payload_length
@@ -112,13 +119,50 @@ def test_single_frame_decoder_rejects_truncation_and_trailing_bytes() -> None:
     encoded = encode_frame(frame())
 
     with pytest.raises(TruncatedFrameError):
-        decode_frame(encoded[:-1])
+        decode_frame(encoded[: -GOLDEN_VECTORS["truncation"]["remove_bytes"]])
     with pytest.raises(ValueError, match="trailing bytes"):
         decode_frame(encoded + b"extra")
 
 
 def test_sequence_and_timestamp_order_handle_rollover() -> None:
-    assert sequence_is_after(0, 2**32 - 1)
-    assert not sequence_is_after(2**32 - 1, 0)
-    assert timestamp_is_after(0, 2**64 - 1)
-    assert not timestamp_is_after(2**64 - 1, 0)
+    vectors = GOLDEN_VECTORS["rollover"]
+    assert sequence_is_after(vectors["sequence"]["current"], vectors["sequence"]["previous"])
+    assert not sequence_is_after(vectors["sequence"]["previous"], vectors["sequence"]["current"])
+    assert timestamp_is_after(
+        vectors["timestamp_ns"]["current"], vectors["timestamp_ns"]["previous"]
+    )
+    assert not timestamp_is_after(
+        vectors["timestamp_ns"]["previous"], vectors["timestamp_ns"]["current"]
+    )
+
+
+def test_corruption_vector_and_bounded_error_history() -> None:
+    valid = encode_frame(frame())
+    corrupt = bytearray(valid)
+    corrupt[GOLDEN_VECTORS["corruption"]["offset"]] ^= GOLDEN_VECTORS["corruption"]["xor"]
+    with pytest.raises(IntegrityError):
+        decode_frame(bytes(corrupt))
+
+    decoder = FrameStreamDecoder()
+    valid_tail = encode_frame(frame(sequence=0))
+    for _ in range(150):
+        decoder.feed(b"noise" + valid_tail)
+    assert len(decoder.errors) == 100
+
+
+@pytest.mark.parametrize(
+    ("kind", "payload"),
+    [
+        (FrameKind.SESSION_START, {}),
+        (FrameKind.DESCRIPTOR, {"id": "imu.x"}),
+        (FrameKind.RECORD, {"signal_id": "imu.x"}),
+        (FrameKind.HEARTBEAT, {"uptime_ns": -1, "device_status": {}}),
+        (FrameKind.ERROR, {"code": "E1", "message": "bad"}),
+        (FrameKind.SESSION_END, {}),
+    ],
+)
+def test_known_frame_kinds_require_valid_payloads(
+    kind: FrameKind, payload: dict[str, object]
+) -> None:
+    with pytest.raises(ProtocolError):
+        frame(kind=kind, payload=payload)

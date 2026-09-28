@@ -14,12 +14,14 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import IntEnum
 from types import MappingProxyType
+from typing import NoReturn
 
 PROTOCOL_NAME = "lbr.telemetry"
 CURRENT_PROTOCOL_VERSION = 1
 SUPPORTED_PROTOCOL_VERSIONS = (CURRENT_PROTOCOL_VERSION,)
 MAGIC = b"LBR1"
 MAX_PAYLOAD_BYTES = 16 * 1024 * 1024
+MAX_STREAM_ERRORS = 100
 UINT32_MODULUS = 2**32
 UINT64_MODULUS = 2**64
 _HEADER = struct.Struct("<4sBBBBIQI")
@@ -86,6 +88,7 @@ class ProtocolFrame:
         _check_uint("timestamp_ns", self.timestamp_ns, 2**64 - 1)
         if not isinstance(self.payload, Mapping):
             raise ProtocolError("payload must be a JSON object")
+        _validate_payload(self.kind, self.payload, ProtocolError)
         object.__setattr__(self, "payload", MappingProxyType(dict(self.payload)))
 
     @property
@@ -108,6 +111,82 @@ def _payload_bytes(payload: Mapping[str, object]) -> bytes:
         ).encode("utf-8")
     except (TypeError, ValueError) as exc:
         raise ProtocolError("payload must contain only JSON-compatible values") from exc
+
+
+def _validate_payload(
+    kind: int,
+    payload: Mapping[str, object],
+    error_type: type[ProtocolError],
+) -> None:
+    """Validate the required payload contract for each currently known kind."""
+
+    def fail(message: str) -> NoReturn:
+        raise error_type(message)
+
+    def text_field(name: str) -> None:
+        value = payload.get(name)
+        if not isinstance(value, str) or not value.strip():
+            fail(f"{name} must be a non-empty string")
+
+    try:
+        frame_kind = FrameKind(kind)
+    except ValueError:
+        return
+
+    if frame_kind is FrameKind.SESSION_START:
+        text_field("session_id")
+        version = payload.get("protocol_version")
+        if isinstance(version, bool) or not isinstance(version, int) or not 1 <= version <= 255:
+            fail("protocol_version must be an integer from 1 through 255")
+        if not isinstance(payload.get("schema"), Mapping):
+            fail("schema must be a JSON object")
+        descriptors = payload.get("descriptors")
+        if (
+            not isinstance(descriptors, Sequence)
+            or isinstance(descriptors, (str, bytes))
+            or any(not isinstance(item, Mapping) for item in descriptors)
+        ):
+            fail("descriptors must be an array of JSON objects")
+    elif frame_kind is FrameKind.DESCRIPTOR:
+        for name in ("id", "display_name", "type", "source_id"):
+            text_field(name)
+        path = payload.get("path")
+        if (
+            not isinstance(path, Sequence)
+            or isinstance(path, (str, bytes))
+            or not path
+            or any(not isinstance(segment, str) or not segment.strip() for segment in path)
+        ):
+            fail("path must be a non-empty array of strings")
+    elif frame_kind is FrameKind.RECORD:
+        text_field("signal_id")
+        if "value" not in payload:
+            fail("value is required")
+        available = payload.get("available", True)
+        if not isinstance(available, bool):
+            fail("available must be a boolean")
+        for name in ("unit", "quality"):
+            if name in payload and (
+                not isinstance(payload[name], str) or not payload[name].strip()
+            ):
+                fail(f"{name} must be a non-empty string when present")
+    elif frame_kind is FrameKind.HEARTBEAT:
+        uptime = payload.get("uptime_ns")
+        if (
+            isinstance(uptime, bool)
+            or not isinstance(uptime, int)
+            or not 0 <= uptime < UINT64_MODULUS
+        ):
+            fail("uptime_ns must be a non-negative uint64 integer")
+        if not isinstance(payload.get("device_status"), dict):
+            fail("device_status must be a JSON object")
+    elif frame_kind is FrameKind.ERROR:
+        text_field("code")
+        text_field("message")
+        if not isinstance(payload.get("recoverable"), bool):
+            fail("recoverable must be a boolean")
+    elif frame_kind is FrameKind.SESSION_END:
+        text_field("reason")
 
 
 def encode_frame(frame: ProtocolFrame) -> bytes:
@@ -159,21 +238,21 @@ def decode_frame(
     magic, version, kind, flags, _reserved, sequence, timestamp_ns, length = _HEADER.unpack_from(
         data
     )
-    if version not in supported_versions:
-        raise UnsupportedProtocolVersion(f"unsupported protocol version {version}")
-
     payload_end = _HEADER.size + length
     payload_bytes = data[_HEADER.size : payload_end]
     expected = _CHECKSUM.unpack_from(data, payload_end)[0]
     actual = zlib.crc32(data[:payload_end]) & 0xFFFFFFFF
     if actual != expected:
         raise IntegrityError("protocol checksum mismatch")
+    if version not in supported_versions:
+        raise UnsupportedProtocolVersion(f"unsupported protocol version {version}")
     try:
         payload = json.loads(payload_bytes.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ProtocolDecodeError("payload is not valid UTF-8 JSON") from exc
     if not isinstance(payload, dict):
         raise ProtocolDecodeError("payload must be a JSON object")
+    _validate_payload(kind, payload, ProtocolDecodeError)
     return ProtocolFrame(version, kind, flags, sequence, timestamp_ns, payload)
 
 
@@ -197,12 +276,17 @@ class FrameStreamDecoder:
     def errors(self) -> tuple[str, ...]:
         return tuple(self._errors)
 
+    def _record_error(self, message: str) -> None:
+        self._errors.append(message)
+        if len(self._errors) > MAX_STREAM_ERRORS:
+            del self._errors[: len(self._errors) - MAX_STREAM_ERRORS]
+
     def feed(self, chunk: bytes) -> tuple[ProtocolFrame, ...]:
         """Consume arbitrary chunks, returning every complete valid frame."""
 
         self._buffer.extend(chunk)
         if len(self._buffer) > self._max_buffer_bytes:
-            self._errors.append("stream buffer exceeded configured limit")
+            self._record_error("stream buffer exceeded configured limit")
             del self._buffer[: len(self._buffer) - len(MAGIC) + 1]
 
         frames: list[ProtocolFrame] = []
@@ -212,7 +296,7 @@ class FrameStreamDecoder:
                 del self._buffer[: -len(MAGIC) + 1]
                 break
             if start:
-                self._errors.append("discarded bytes before next frame")
+                self._record_error("discarded bytes before next frame")
                 del self._buffer[:start]
             if len(self._buffer) < _HEADER.size:
                 break
@@ -221,7 +305,7 @@ class FrameStreamDecoder:
             except TruncatedFrameError:
                 break
             except ProtocolDecodeError as exc:
-                self._errors.append(str(exc))
+                self._record_error(str(exc))
                 del self._buffer[0]
                 continue
             if len(self._buffer) < total:
@@ -230,7 +314,7 @@ class FrameStreamDecoder:
             try:
                 frames.append(decode_frame(candidate, supported_versions=self._supported_versions))
             except ProtocolDecodeError as exc:
-                self._errors.append(str(exc))
+                self._record_error(str(exc))
                 del self._buffer[0]
                 continue
             del self._buffer[:total]
@@ -240,7 +324,7 @@ class FrameStreamDecoder:
         """Report and discard a truncated tail at end-of-stream."""
 
         if self._buffer:
-            self._errors.append("truncated tail at end of stream")
+            self._record_error("truncated tail at end of stream")
             self._buffer.clear()
         return self.errors
 

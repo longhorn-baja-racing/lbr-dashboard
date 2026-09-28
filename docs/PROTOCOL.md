@@ -11,7 +11,9 @@ An `.lbrlog` native session file is a concatenation of protocol frames. A live
 transport may split or combine those frames however it needs; it does not need
 to use the SD file's storage boundaries.
 
-Each frame is little-endian binary data:
+Each frame is little-endian binary data. Decoders verify CRC32 before acting
+on the version byte, so a damaged version byte is reported as corruption;
+version-skew errors are reserved for intact frames:
 
 | Offset | Size | Field |
 | ---: | ---: | --- |
@@ -35,13 +37,20 @@ Kinds `1` through `6` are `session_start`, `descriptor`, `record`,
 `heartbeat`, `error`, and `session_end`. Unknown kinds remain inspectable and
 must not be interpreted as a known kind.
 
-Payloads are schema-driven JSON objects. A record contains a `signal_id`, a
-`value`, and may contain `quality`, `available`, or other documented fields.
-Descriptors refer to the versioned signal model in `core/signals.py`. A
-session start carries `session_id`, `protocol_version`, schema metadata, and
-the descriptors needed to interpret the session. A heartbeat carries device
-status and uptime. An error carries a stable `code`, human-readable `message`,
-and `recoverable` flag. A session end carries a close `reason`.
+Known frame kinds have these required JSON payload fields and types; additional
+fields are allowed for forward compatibility:
+
+| Kind | Required fields and types |
+| --- | --- |
+| `session_start` | `session_id`: non-empty string; `protocol_version`: integer 1–255; `schema`: object; `descriptors`: array of descriptor objects |
+| `descriptor` | `id`, `display_name`, `type`, `source_id`: non-empty strings; `path`: non-empty array of non-empty strings. Other descriptor fields follow `core/signals.py`. |
+| `record` | `signal_id`: non-empty string; `value`: any JSON value. Optional `unit` and `quality` are non-empty strings; optional `available` is boolean. |
+| `heartbeat` | `uptime_ns`: unsigned 64-bit integer; `device_status`: object |
+| `error` | `code`, `message`: non-empty strings; `recoverable`: boolean |
+| `session_end` | `reason`: non-empty string |
+
+An unavailable record still includes `value` (use JSON `null`) and sets
+`available` to `false`. Unknown frame kinds remain opaque JSON objects.
 
 One record represents one signal sample. Mixed-rate signals therefore remain
 sparse; the protocol never invents duplicate or interpolated rows. Full-rate
@@ -55,11 +64,17 @@ the half-range modulo rule for sequence and timestamp rollover.
 ## Corruption, truncation, and compatibility
 
 The stream decoder searches for the next `LBR1` magic after discarded bytes.
-It waits for a complete header and declared payload, verifies CRC32, and emits
-valid frames only. On a bad checksum, malformed JSON, unsupported version, or
-oversized length it records a bounded error and advances to the next possible
-magic. A truncated final frame is recoverable: completed prior frames remain
-usable and the tail is reported when the stream closes.
+It waits for a complete header and declared payload, verifies CRC32 before
+checking protocol support, and emits valid frames only. On a bad checksum,
+malformed JSON, invalid payload, unsupported version, or oversized length it
+records an error and advances to the next possible magic. It retains only the
+most recent 100 errors. A truncated final frame is recoverable: completed
+prior frames remain usable and the tail is reported when the stream closes.
+
+The shared `tests/fixtures/protocol_golden.json` vectors define a corrupted
+version byte, a one-byte truncated tail, unsupported version 2, and 32-bit
+sequence / 64-bit timestamp rollover pairs. Firmware host tests should apply
+the same mutations and boundary values.
 
 Readers must accept older supported protocol versions and skip or preserve
 unknown JSON fields. Unknown frame kinds may be logged and skipped. An
