@@ -45,13 +45,14 @@ def test_sample_csv_can_be_loaded() -> None:
 def test_time_axis_is_normalized_to_zero() -> None:
     application = create_application([])
     window = create_main_window()
-    window.right_panel.set_log(
-        LogSession.from_rows(
-            ("timestamp_ms", "engine_rpm"),
-            (("-20", "900"), ("-10", "950"), ("0", "1000")),
-        )
+    log = LogSession.from_rows(
+        ("timestamp_ms", "engine_rpm"),
+        (("-20", "900"), ("-10", "950"), ("0", "1000")),
     )
-    window.right_panel.plot_column("engine_rpm")
+    window.right_panel.set_table(log.headers, log.rows)
+    window.right_panel.plot_column(
+        "engine_rpm", log.numeric_column("engine_rpm"), log.numeric_column("timestamp_ms")
+    )
     plot_item = window.right_panel.plot_widget.getPlotItem()
     assert plot_item is not None
     item = plot_item.listDataItems()[0]

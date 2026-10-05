@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QSplitter
 
-from ..core.log import LogImporter
+from ..core.log import LogImporter, LogSessionStore
 from .constants import MIN_PANEL_WIDTH
 from .left_panel import LeftPanel
 from .right_panel import RightPanel
@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, importer: LogImporter) -> None:
         super().__init__()
-        self._importer = importer
+        self._log_store = LogSessionStore(importer)
         self.setWindowTitle("LBR Dashboard")
         self.resize(1200, 700)
 
@@ -57,7 +57,12 @@ class MainWindow(QMainWindow):
 
         item = self.left_panel.list_widget.item(column_index)
         if item is not None:
-            self.right_panel.plot_column(item.text())
+            column_name = item.text()
+            self.right_panel.plot_column(
+                column_name,
+                self._log_store.numeric_column(column_name),
+                self._log_store.numeric_column("timestamp_ms"),
+            )
 
     def open_csv(self) -> None:
         """Open a CSV file and display its columns and rows."""
@@ -69,11 +74,10 @@ class MainWindow(QMainWindow):
     def load_csv(self, file_path: Path) -> None:
         """Ask the importer to decode a CSV, then pass its model to the panels."""
 
-        log = self._importer.import_session(file_path)
-        if not log.headers:
+        if not self._log_store.load(file_path):
             return
 
-        self.left_panel.set_columns(list(log.headers))
-        self.right_panel.set_log(log)
+        self.left_panel.set_columns(list(self._log_store.headers))
+        self.right_panel.set_table(self._log_store.headers, self._log_store.rows)
         self.left_panel.list_widget.setCurrentRow(0)
         self._select_column(0)

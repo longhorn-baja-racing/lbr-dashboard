@@ -56,3 +56,32 @@ class LogImporter(Protocol):
     """Decode a file into the normalized, presentation-independent log model."""
 
     def import_session(self, path: Path) -> LogSession: ...
+
+
+class LogSessionStore:
+    """Application-owned holder for the current imported log session."""
+
+    def __init__(self, importer: LogImporter) -> None:
+        self._importer = importer
+        self._session: LogSession | None = None
+
+    def load(self, path: Path) -> bool:
+        """Load a session and return whether it contains a header row."""
+
+        self._session = self._importer.import_session(path)
+        return bool(self._session.headers)
+
+    @property
+    def headers(self) -> tuple[str, ...]:
+        return self._session.headers if self._session is not None else ()
+
+    @property
+    def rows(self) -> tuple[tuple[str, ...], ...]:
+        return self._session.rows if self._session is not None else ()
+
+    def numeric_column(self, name: str) -> NumericColumn | None:
+        """Return one numeric column from the current session."""
+
+        if self._session is None:
+            return None
+        return self._session.numeric_column(name)
