@@ -14,6 +14,24 @@ from .lifecycle import (
     ServiceEvent,
     ServiceFailure,
 )
+from .protocol import (
+    CURRENT_PROTOCOL_VERSION,
+    MAGIC,
+    MAX_PAYLOAD_BYTES,
+    PROTOCOL_NAME,
+    FrameKind,
+    FrameStreamDecoder,
+    IntegrityError,
+    ProtocolDecodeError,
+    ProtocolError,
+    ProtocolFrame,
+    TruncatedFrameError,
+    UnsupportedProtocolVersion,
+    decode_frame,
+    encode_frame,
+    sequence_is_after,
+    timestamp_is_after,
+)
 from .registries import RegistryBundle
 from .registry import FactoryError, Registry, RegistryError
 from .signals import (
@@ -30,10 +48,20 @@ from .signals import (
 __all__ = [
     "AnalysisProvider",
     "BackgroundService",
+    "CURRENT_PROTOCOL_VERSION",
     "CancellationRequested",
     "CancellationToken",
     "FactoryError",
+    "FrameKind",
+    "FrameStreamDecoder",
     "Importer",
+    "IntegrityError",
+    "MAGIC",
+    "MAX_PAYLOAD_BYTES",
+    "PROTOCOL_NAME",
+    "ProtocolDecodeError",
+    "ProtocolError",
+    "ProtocolFrame",
     "Registry",
     "RegistryBundle",
     "RegistryError",
@@ -48,6 +76,12 @@ __all__ = [
     "ServiceEvent",
     "ServiceFailure",
     "TelemetrySource",
+    "TruncatedFrameError",
     "UnitConverter",
+    "UnsupportedProtocolVersion",
     "WidgetFactory",
+    "decode_frame",
+    "encode_frame",
+    "sequence_is_after",
+    "timestamp_is_after",
 ]

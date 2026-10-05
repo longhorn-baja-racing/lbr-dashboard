@@ -1,0 +1,14 @@
+{
+  "name": "record-v1-imu-acceleration-x",
+  "version": 1,
+  "kind": 3,
+  "flags": 0,
+  "sequence": 41,
+  "timestamp_ns": 12500,
+  "payload": {
+    "signal_id": "imu.acceleration.x",
+    "unit": "m/s2",
+    "value": 1.25
+  },
+  "encoded_hex": "4c4252310103000029000000d4300000000000003d0000007b227369676e616c5f6964223a22696d752e616363656c65726174696f6e2e78222c22756e6974223a226d2f7332222c2276616c7565223a312e32357d4ca2ed23"
+}
