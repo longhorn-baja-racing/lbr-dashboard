@@ -20,6 +20,66 @@
       "display": {"decimals": 2}
     },
     {
+      "id": "imu.acceleration.y",
+      "display_name": "Acceleration Y",
+      "path": ["vehicle", "imu", "acceleration"],
+      "type": "numeric",
+      "canonical_unit": "m/s^2",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 100
+    },
+    {
+      "id": "imu.acceleration.z",
+      "display_name": "Acceleration Z",
+      "path": ["vehicle", "imu", "acceleration"],
+      "type": "numeric",
+      "canonical_unit": "m/s^2",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 100
+    },
+    {
+      "id": "imu.gyroscope.x",
+      "display_name": "Gyroscope X",
+      "path": ["vehicle", "imu", "gyroscope"],
+      "type": "numeric",
+      "canonical_unit": "rad/s",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 100
+    },
+    {
+      "id": "imu.gyroscope.y",
+      "display_name": "Gyroscope Y",
+      "path": ["vehicle", "imu", "gyroscope"],
+      "type": "numeric",
+      "canonical_unit": "rad/s",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 100
+    },
+    {
+      "id": "imu.gyroscope.z",
+      "display_name": "Gyroscope Z",
+      "path": ["vehicle", "imu", "gyroscope"],
+      "type": "numeric",
+      "canonical_unit": "rad/s",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 100
+    },
+    {
+      "id": "imu.temperature",
+      "display_name": "IMU Temperature",
+      "path": ["vehicle", "imu", "temperature"],
+      "type": "numeric",
+      "canonical_unit": "degC",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "nominal_rate_hz": 1
+    },
+    {
       "id": "imu.orientation.quaternion",
       "display_name": "Orientation Quaternion",
       "path": ["vehicle", "imu", "orientation"],
@@ -30,6 +90,40 @@
       "device_id": "bno055-01",
       "nominal_rate_hz": 50,
       "future_calibration_model": "bno055-v2"
+    },
+    {
+      "id": "imu.calibration",
+      "display_name": "BNO055 Calibration State",
+      "path": ["vehicle", "imu", "status"],
+      "type": "vector",
+      "shape": [4],
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01",
+      "description": "System, gyroscope, accelerometer, and magnetometer calibration levels"
+    },
+    {
+      "id": "imu.status",
+      "display_name": "BNO055 Sensor Status",
+      "path": ["vehicle", "imu", "status"],
+      "type": "status",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01"
+    },
+    {
+      "id": "imu.self_test",
+      "display_name": "BNO055 Self Test",
+      "path": ["vehicle", "imu", "status"],
+      "type": "status",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01"
+    },
+    {
+      "id": "imu.event",
+      "display_name": "BNO055 Events",
+      "path": ["vehicle", "imu", "events"],
+      "type": "event",
+      "source_id": "pico-telemetry",
+      "device_id": "bno055-01"
     },
     {
       "id": "power.battery.low",

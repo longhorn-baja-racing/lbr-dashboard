@@ -1,0 +1,21 @@
+{
+  "series": {
+    "imu.acceleration.x": [
+      {"timestamp_ns": 0, "value": 0.01},
+      {"timestamp_ns": 10000000, "value": 0.02},
+      {"timestamp_ns": 20000000, "value": 0.03}
+    ],
+    "imu.temperature": [
+      {"timestamp_ns": 0, "value": 24.5}
+    ]
+  },
+  "events": [
+    {
+      "signal_id": "imu.event",
+      "sample": {
+        "timestamp_ns": 20000000,
+        "value": {"code": "calibration_changed", "status": [3, 3, 3, 3]}
+      }
+    }
+  ]
+}

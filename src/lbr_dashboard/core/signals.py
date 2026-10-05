@@ -279,16 +279,18 @@ class SignalDescriptor:
 class SignalSample:
     """One sparse sample; each signal keeps its own timeline."""
 
-    timestamp_ns: int | float
+    timestamp_ns: int
     value: object | None
     available: bool = True
     quality: str | None = None
 
     def __post_init__(self) -> None:
-        if isinstance(self.timestamp_ns, bool) or not isinstance(self.timestamp_ns, (int, float)):
-            raise SignalSchemaError("sample timestamp_ns must be numeric")
-        if not isfinite(float(self.timestamp_ns)):
-            raise SignalSchemaError("sample timestamp_ns must be finite")
+        if (
+            isinstance(self.timestamp_ns, bool)
+            or not isinstance(self.timestamp_ns, int)
+            or not 0 <= self.timestamp_ns <= 0xFFFFFFFFFFFFFFFF
+        ):
+            raise SignalSchemaError("sample timestamp_ns must be a non-negative uint64 integer")
         if not isinstance(self.available, bool):
             raise SignalSchemaError("sample available must be a boolean")
         if self.available and self.value is None:
