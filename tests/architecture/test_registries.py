@@ -2,7 +2,14 @@
 
 import pytest
 
-from lbr_dashboard.core import FactoryError, Registry, RegistryBundle
+from lbr_dashboard.core import (
+    FactoryError,
+    Registry,
+    RegistryBundle,
+    SourceCapabilities,
+    SourceHealth,
+    SourceState,
+)
 
 
 def test_registry_rejects_duplicates_and_returns_sorted_ids() -> None:
@@ -52,12 +59,29 @@ def test_each_application_gets_independent_registry_bundle() -> None:
 def test_source_and_widget_can_register_without_shell_changes() -> None:
     class DemoSource:
         source_id = "demo"
+        capabilities = SourceCapabilities(False, True, True, 16)
+        state = SourceState.CREATED
+
+        def open(self) -> None:
+            pass
 
         def start(self, events, cancellation) -> None:
             del events, cancellation
 
         def stop(self) -> None:
             pass
+
+        def close(self) -> None:
+            pass
+
+        def seek(self, timestamp_ns: int) -> None:
+            del timestamp_ns
+
+        def set_rate(self, rate_hz: float) -> None:
+            del rate_hz
+
+        def health(self) -> SourceHealth:
+            return SourceHealth(self.state)
 
     class DemoWidget:
         widget_id = "demo"
