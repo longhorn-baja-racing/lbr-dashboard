@@ -166,10 +166,10 @@ def _validate_payload(
         if not isinstance(available, bool):
             fail("available must be a boolean")
         for name in ("unit", "quality"):
-            if name in payload and (
-                not isinstance(payload[name], str) or not payload[name].strip()
-            ):
-                fail(f"{name} must be a non-empty string when present")
+            if name in payload:
+                value = payload[name]
+                if not isinstance(value, str) or not value.strip():
+                    fail(f"{name} must be a non-empty string when present")
     elif frame_kind is FrameKind.HEARTBEAT:
         uptime = payload.get("uptime_ns")
         if (
