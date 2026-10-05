@@ -34,17 +34,15 @@ class Registry(Generic[T]):
     """
 
     def __init__(self, name: str) -> None:
-        if not name.strip():
-            raise RegistryError("Registry name must not be empty")
+        if not isinstance(name, str) or not name or name != name.strip():
+            raise RegistryError("Registry name must not be empty or padded with whitespace")
         self.name = name
         self._factories: dict[str, Factory[T]] = {}
 
     def register(self, identifier: str, factory: Factory[T]) -> None:
         """Register a factory, rejecting blank or duplicate identifiers."""
 
-        normalized = identifier.strip()
-        if not normalized:
-            raise RegistryError(f"Registry '{self.name}' requires a non-empty identifier")
+        normalized = self._validate_identifier(identifier)
         if normalized in self._factories:
             raise RegistryError(
                 f"Identifier '{normalized}' is already registered in registry '{self.name}'"
@@ -54,6 +52,7 @@ class Registry(Generic[T]):
     def unregister(self, identifier: str) -> None:
         """Remove an identifier when an application explicitly unloads it."""
 
+        identifier = self._validate_identifier(identifier)
         try:
             del self._factories[identifier]
         except KeyError as exc:
@@ -62,6 +61,7 @@ class Registry(Generic[T]):
     def get(self, identifier: str) -> Factory[T]:
         """Return a factory or raise a stable, descriptive unknown-ID error."""
 
+        identifier = self._validate_identifier(identifier)
         try:
             return self._factories[identifier]
         except KeyError as exc:
@@ -82,7 +82,15 @@ class Registry(Generic[T]):
         return tuple(sorted(self._factories))
 
     def __contains__(self, identifier: str) -> bool:
+        identifier = self._validate_identifier(identifier)
         return identifier in self._factories
+
+    def _validate_identifier(self, identifier: str) -> str:
+        if not isinstance(identifier, str) or not identifier or identifier != identifier.strip():
+            raise RegistryError(
+                f"Registry '{self.name}' identifiers must not be empty or padded with whitespace"
+            )
+        return identifier
 
     def __iter__(self) -> Iterator[str]:
         return iter(self.identifiers())

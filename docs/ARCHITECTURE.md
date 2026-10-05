@@ -16,9 +16,10 @@ concrete providers.
 | `ui` | Qt widgets and presentation state | `core`, Qt, and PyQtGraph |
 | `app` | Composition root and process lifecycle | every production layer |
 
-The current repository has the `core`, `ui`, and `app` layers. The empty
-provider layers are reserved for the next P0 issues; adding a provider must
-not require imports from `ui` or changes to the application shell.
+The current repository has the `core`, `importers`, `ui`, and `app` layers.
+Other provider layers are reserved for later milestones; the UI receives
+importer-produced models through core contracts and does not import provider
+implementations.
 
 Forbidden directions enforced by the architecture tests:
 
@@ -34,8 +35,11 @@ Forbidden directions enforced by the architecture tests:
 - `RegistryBundle` is passed through composition. It is not a global singleton
   and it does not contain business logic.
 - Registries are internal extension mechanisms. IDs are stable within one
-  application instance, duplicate registration fails immediately, and unknown
-  IDs fail with a descriptive `KeyError`.
+  application instance, padded identifiers are rejected, duplicate
+  registration fails immediately, and unknown IDs fail with a descriptive
+  `KeyError`.
+- Importers own file decoding and normalized log data. UI widgets render the
+  resulting `LogSession` and do not parse CSV or maintain parallel log arrays.
 - Factory exceptions are wrapped as `FactoryError` with the registry and ID so
   the composition boundary can report them consistently.
 - A source/importer/analysis provider owns its own resources. The application

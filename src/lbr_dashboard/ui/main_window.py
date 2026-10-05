@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import csv
 from pathlib import Path
+from typing import cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QSplitter
 
+from ..core.contracts import Importer
 from ..core.registries import RegistryBundle
 from .constants import MIN_PANEL_WIDTH
 from .left_panel import LeftPanel
@@ -18,8 +19,7 @@ from .top_menu_bar import TopMenuBar
 class MainWindow(QMainWindow):
     """Main application window.
 
-    CSV loading remains a deliberately small compatibility path for this shell.
-    It will move behind importer/source interfaces in P0 issues #17 and #20.
+    File decoding belongs to an importer; the shell only coordinates display.
     """
 
     def __init__(self, registries: RegistryBundle | None = None) -> None:
@@ -74,15 +74,12 @@ class MainWindow(QMainWindow):
     def load_csv(self, file_path: Path) -> None:
         """Load a CSV directly, primarily for the foundation smoke test."""
 
-        with file_path.open(newline="", encoding="utf-8-sig") as csv_file:
-            rows = list(csv.reader(csv_file))
-
-        if not rows:
+        importer = cast(Importer, self.registries.importers.create("csv"))
+        log = importer.import_session(file_path)
+        if not log.headers:
             return
 
-        headers, data = rows[0], rows[1:]
-        self.left_panel.set_columns(headers)
-        self.right_panel.set_data(headers, data)
-        if headers:
-            self.left_panel.list_widget.setCurrentRow(0)
-            self._select_column(0)
+        self.left_panel.set_columns(list(log.headers))
+        self.right_panel.set_log(log)
+        self.left_panel.list_widget.setCurrentRow(0)
+        self._select_column(0)

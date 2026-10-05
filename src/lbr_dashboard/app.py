@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from PySide6.QtWidgets import QApplication
 
 from .core.registries import RegistryBundle
+from .importers.csv_importer import CsvImporter
 from .ui.main_window import MainWindow
 
 
@@ -24,7 +25,10 @@ def create_application(argv: Sequence[str] | None = None) -> QApplication:
 def create_main_window(registries: RegistryBundle | None = None) -> MainWindow:
     """Create the application shell without showing it."""
 
-    return MainWindow(registries=registries)
+    application_registries = registries or RegistryBundle()
+    if "csv" not in application_registries.importers:
+        application_registries.importers.register("csv", CsvImporter)
+    return MainWindow(registries=application_registries)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
