@@ -48,6 +48,9 @@ Forbidden directions enforced by the architecture tests:
 - Worker code never calls Qt widgets. It publishes immutable `ServiceEvent`
   values to a queue; the owning/UI thread drains that queue at its normal
   update boundary.
+- Every source record event carries both its stable `signal_id` and sample.
+  Source event queues may drop record/health data under pressure, but retain
+  descriptor, error, and end-of-stream control events for consumers.
 - Cancellation is cooperative. Long-running work must check its
   `CancellationToken` and release resources in `finally` blocks.
 
@@ -63,3 +66,22 @@ window = create_main_window(registries)
 ```
 
 The shell does not need to be edited when either provider is added.
+
+## Telemetry source contract
+
+`core.contracts.TelemetrySource` is the framework-neutral contract for replay,
+live, and simulated sources. Every source publishes normalized descriptors and
+records through the same typed event sink and reports health, errors, and end
+of stream. `SourceCapabilities` makes seek and rate-control support explicit;
+callers receive `UnsupportedSourceOperation` rather than a false success.
+
+Source workers use an owner-controlled `SourceEventQueue`. Record and health
+events are bounded; publishers can drop them or wait for capacity. Descriptor,
+error, and end-of-stream events evict buffered data where possible, then wait
+for space if the queue contains only control events. Thus the queue stays
+bounded without losing control events. Overflow increments a dropped-event
+metric and remains observable to the owner. `start` is the blocking producer
+operation and should run under the existing `BackgroundService`; `stop` must
+unblock it, while `open` and `close` define repeatable resource boundaries.
+Sources expose timestamped data only; clock control and widgets remain separate
+layers.
