@@ -28,6 +28,15 @@ uv run python -m lbr_dashboard
 For a plain pip environment, install the project in editable mode with
 `pip install -e .`.
 
+## Package layout
+
+- `lbr_dashboard.app` owns application startup and composes the CSV importer.
+- `lbr_dashboard.core.log` defines immutable imported log data and the importer
+  contract without depending on Qt.
+- `lbr_dashboard.importers.csv_importer` owns CSV decoding and numeric parsing.
+- `lbr_dashboard.ui` renders the imported model; widgets do not decode CSV or
+  maintain their own parallel numeric arrays.
+
 ## Quality checks
 
 ```bash

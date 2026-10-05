@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 import pyqtgraph as pg
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+
+from ...core.log import LogSession
 
 
 class RightPanel(QWidget):
@@ -44,29 +44,18 @@ class RightPanel(QWidget):
         layout.addWidget(splitter)
         self.setStyleSheet("background-color: #3a3a3a; color: #ffffff;")
 
-        self._column_data: dict[str, list[float | None]] = {}
+        self._log: LogSession | None = None
 
-    def set_data(self, headers: list[str], rows: Sequence[Sequence[str]]) -> None:
-        """Populate the table and prepare numeric columns for graphing."""
+    def set_log(self, log: LogSession) -> None:
+        """Render an imported model without parsing or maintaining log arrays."""
 
-        self._column_data = {
-            header: [self._as_float(row[index]) if index < len(row) else None for row in rows]
-            for index, header in enumerate(headers)
-        }
-
-        self.table.setColumnCount(len(headers))
-        self.table.setRowCount(len(rows))
-        self.table.setHorizontalHeaderLabels(headers)
-        for row_index, row in enumerate(rows):
+        self._log = log
+        self.table.setColumnCount(len(log.headers))
+        self.table.setRowCount(len(log.rows))
+        self.table.setHorizontalHeaderLabels(list(log.headers))
+        for row_index, row in enumerate(log.rows):
             for column_index, value in enumerate(row):
                 self.table.setItem(row_index, column_index, QTableWidgetItem(value))
-
-    @staticmethod
-    def _as_float(value: str) -> float | None:
-        try:
-            return float(value)
-        except (TypeError, ValueError):
-            return None
 
     def highlight_column(self, column_index: int) -> None:
         if column_index < 0:
@@ -84,11 +73,13 @@ class RightPanel(QWidget):
     def plot_column(self, column_name: str) -> None:
         """Plot the named numeric column."""
 
-        values = self._column_data.get(column_name)
+        if self._log is None:
+            return
+        values = self._log.numeric_column(column_name)
         if values is None:
             return
 
-        timestamp_values = self._column_data.get("timestamp_ms")
+        timestamp_values = self._log.numeric_column("timestamp_ms")
         if timestamp_values is not None and column_name != "timestamp_ms":
             timestamps = [value for value in timestamp_values if value is not None]
             start_time = min(timestamps) if timestamps else 0.0

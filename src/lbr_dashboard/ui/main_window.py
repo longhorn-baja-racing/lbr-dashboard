@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import csv
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QSplitter
 
+from ..core.log import LogImporter
 from .constants import MIN_PANEL_WIDTH
 from .left_panel import LeftPanel
 from .right_panel import RightPanel
@@ -15,14 +15,11 @@ from .top_menu_bar import TopMenuBar
 
 
 class MainWindow(QMainWindow):
-    """Main application window.
+    """Main application window that coordinates imported data and presentation."""
 
-    CSV loading remains a deliberately small compatibility path for this shell.
-    It will move behind importer/source interfaces in P0 issues #17 and #20.
-    """
-
-    def __init__(self) -> None:
+    def __init__(self, importer: LogImporter) -> None:
         super().__init__()
+        self._importer = importer
         self.setWindowTitle("LBR Dashboard")
         self.resize(1200, 700)
 
@@ -70,17 +67,13 @@ class MainWindow(QMainWindow):
             self.load_csv(Path(file_path))
 
     def load_csv(self, file_path: Path) -> None:
-        """Load a CSV directly, primarily for the foundation smoke test."""
+        """Ask the importer to decode a CSV, then pass its model to the panels."""
 
-        with file_path.open(newline="", encoding="utf-8-sig") as csv_file:
-            rows = list(csv.reader(csv_file))
-
-        if not rows:
+        log = self._importer.import_session(file_path)
+        if not log.headers:
             return
 
-        headers, data = rows[0], rows[1:]
-        self.left_panel.set_columns(headers)
-        self.right_panel.set_data(headers, data)
-        if headers:
-            self.left_panel.list_widget.setCurrentRow(0)
-            self._select_column(0)
+        self.left_panel.set_columns(list(log.headers))
+        self.right_panel.set_log(log)
+        self.left_panel.list_widget.setCurrentRow(0)
+        self._select_column(0)

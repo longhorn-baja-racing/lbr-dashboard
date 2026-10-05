@@ -8,6 +8,7 @@ from collections.abc import Sequence
 
 from PySide6.QtWidgets import QApplication
 
+from .importers.csv_importer import CsvImporter
 from .ui.main_window import MainWindow
 
 
@@ -21,9 +22,9 @@ def create_application(argv: Sequence[str] | None = None) -> QApplication:
 
 
 def create_main_window() -> MainWindow:
-    """Create the application shell without showing it."""
+    """Compose the application shell without showing it."""
 
-    return MainWindow()
+    return MainWindow(importer=CsvImporter())
 
 
 def main(argv: Sequence[str] | None = None) -> int:
