@@ -1,1 +1,2 @@
-PyQt6
+# Compatibility entry point; pyproject.toml owns dependencies.
+-e .

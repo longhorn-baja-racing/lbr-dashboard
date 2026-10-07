@@ -1,4 +1,24 @@
+.PHONY: format lint typecheck test quality format-check build run
+
 format:
-	autoflake --recursive . -i --remove-all-unused-imports --ignore-init-module-imports
-	isort -w 120 .
-	yapf -i -r -p --style="{based_on_style: yapf, indent_width: 4, column_limit: 120}" --no-local-style ./src/
+	uv run --locked ruff format .
+
+lint:
+	uv run --locked ruff check .
+
+typecheck:
+	uv run --locked pyright
+
+test:
+	uv run --locked pytest
+
+quality: format-check lint typecheck test build
+
+format-check:
+	uv run --locked ruff format --check .
+
+build:
+	uv build
+
+run:
+	uv run --locked lbr-dashboard

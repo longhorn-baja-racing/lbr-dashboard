@@ -1,8 +1,10 @@
-class _WindowConstants:
+"""Backward-compatible UI constants."""
 
-    @property
-    def MIN_PANEL_WIDTH(self) -> int:
-        return 200
+from lbr_dashboard.ui.constants import MIN_PANEL_WIDTH
+
+
+class _WindowConstants:
+    MIN_PANEL_WIDTH = MIN_PANEL_WIDTH
 
 
 window_constants = _WindowConstants()
