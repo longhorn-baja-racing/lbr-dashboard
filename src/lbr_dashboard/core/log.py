@@ -1,4 +1,4 @@
-"""Presentation-independent imported tabular log data."""
+"""Qt-independent legacy CSV model; mixed-rate telemetry is separate roadmap work."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ class LogSession:
 
 
 class LogImporter(Protocol):
-    """Decode a file into the normalized, presentation-independent log model."""
+    """Decode a legacy file into the presentation-independent tabular model."""
 
     def import_session(self, path: Path) -> LogSession: ...
 

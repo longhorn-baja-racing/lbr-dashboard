@@ -1,19 +1,24 @@
+.PHONY: format lint typecheck test quality format-check build run
+
 format:
-	uv run ruff format .
+	uv run --locked ruff format .
 
 lint:
-	uv run ruff check .
+	uv run --locked ruff check .
 
 typecheck:
-	uv run pyright
+	uv run --locked pyright
 
 test:
-	uv run pytest
+	uv run --locked pytest
 
-quality: format-check lint typecheck test
+quality: format-check lint typecheck test build
 
 format-check:
-	uv run ruff format --check .
+	uv run --locked ruff format --check .
+
+build:
+	uv build
 
 run:
-	uv run lbr-dashboard
+	uv run --locked lbr-dashboard
